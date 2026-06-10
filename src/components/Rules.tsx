@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import type { Rule } from '../data'
+import type { CustomRule, Rule } from '../data'
 import { ACCENT_DOT, Ic, SectionHead, Shell, Toggle } from '../ui'
+import RuleBuilder from './RuleBuilder'
 
 const MATCH_LABEL: Record<Rule['matchType'], string> = {
   domain: 'домен',
@@ -8,7 +9,7 @@ const MATCH_LABEL: Record<Rule['matchType'], string> = {
   any: 'любой отправитель',
 }
 
-function RuleCard({
+function PresetCard({
   rule,
   index,
   onToggle,
@@ -17,13 +18,13 @@ function RuleCard({
   index: number
   onToggle: (id: string, on: boolean) => void
 }) {
-  const [open, setOpen] = useState(index === 0)
+  const [open, setOpen] = useState(false)
 
   return (
     <Shell className="fade-up">
-      <div style={{ animationDelay: `${index * 90}ms` }}>
+      <div style={{ animationDelay: `${index * 70}ms` }}>
         <div
-          className="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-3 px-6 py-5 md:px-7"
+          className="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-3 px-6 py-4 md:px-7"
           onClick={() => setOpen(!open)}
         >
           <span
@@ -31,7 +32,7 @@ function RuleCard({
           />
           <div className="min-w-0 flex-1">
             <p
-              className={`text-[16px] ${
+              className={`text-[15px] ${
                 rule.enabled ? 'font-medium text-ink' : 'font-light text-ink-faint line-through decoration-ink/20'
               }`}
             >
@@ -45,7 +46,6 @@ function RuleCard({
             <p className="mt-0.5 truncate text-xs font-light text-ink-mute">
               {MATCH_LABEL[rule.matchType]}
               {rule.matchType !== 'any' && <span className="font-mono text-[11px]"> · {rule.matchValue}</span>}
-              <span className="text-ink-faint"> · дубликаты: {rule.dedupe.length} критерия</span>
             </p>
           </div>
           <div className="flex items-center gap-4" onClick={(e) => e.stopPropagation()}>
@@ -65,49 +65,16 @@ function RuleCard({
           style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
         >
           <div className="overflow-hidden">
-            <div className="border-t border-ink/[0.06] px-6 pb-6 pt-5 md:px-7">
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <div>
-                  <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-ink-mute">
-                    Заполнение полей сделки
-                  </p>
-                  <ul className="space-y-2">
-                    {rule.fields.map((f) => (
-                      <li key={f.target} className="flex items-baseline gap-3 text-sm">
-                        <span className="w-36 shrink-0 text-ink-soft">{f.target}</span>
-                        <span className="text-ink-faint">←</span>
-                        <span className="min-w-0 flex-1 font-light text-ink-soft">{f.source}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-4 text-xs font-light text-ink-mute">
-                    шаблон названия: <span className="font-mono text-[11px] text-ink-soft">{rule.titleTemplate}</span>
-                  </p>
-                </div>
-                <div>
-                  <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-ink-mute">
-                    Критерии дубликатов
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {rule.dedupe.map((d) => (
-                      <span
-                        key={d}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/[0.08] px-3 py-1.5 text-xs text-amber-900 ring-1 ring-amber-600/20"
-                      >
-                        <Ic name="shield" size={12} />
-                        {d === 'messageId' && 'ID письма'}
-                        {d === 'subject' && 'тема письма'}
-                        {d === 'orderNum' && '№ заказа'}
-                        {d === 'purchaseNum' && '№ закупки'}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="mt-4 max-w-sm text-xs font-light leading-relaxed text-ink-mute">
-                    Если хотя бы один критерий совпал с существующей сделкой — новая не создаётся, письмо
-                    прикрепляется к найденной.
-                  </p>
-                </div>
-              </div>
+            <div className="border-t border-ink/[0.06] px-6 pb-5 pt-4 md:px-7">
+              <ul className="space-y-1.5">
+                {rule.fields.map((f) => (
+                  <li key={f.target} className="flex items-baseline gap-3 text-sm">
+                    <span className="w-36 shrink-0 text-ink-soft">{f.target}</span>
+                    <span className="text-ink-faint">←</span>
+                    <span className="min-w-0 flex-1 font-light text-ink-soft">{f.source}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
@@ -119,56 +86,42 @@ function RuleCard({
 export default function Rules({
   rules,
   onToggle,
+  customRules,
+  setCustomRules,
 }: {
   rules: Rule[]
   onToggle: (id: string, on: boolean) => void
+  customRules: CustomRule[]
+  setCustomRules: (next: CustomRule[]) => void
 }) {
-  const [note, setNote] = useState(false)
-
   return (
     <section>
       <SectionHead
-        eyebrow="маппинг и дубликаты"
+        eyebrow="конструктор парсера"
         title={
           <>
-            Правила <em className="font-normal italic text-teal-800">отправителей</em>
+            Правило — <em className="font-normal italic text-teal-800">из письма</em>
           </>
         }
-        desc="Для каждого отправителя — свои правила: как заполнять поля сделки и по каким признакам ловить дубликаты. Правила проверяются сверху вниз, «Общее правило» подхватывает всех остальных."
+        desc="Закиньте пример письма и выделяйте значения прямо в тексте: номер закупки, сумму, срок. Каждое выделение привязывается к полю сделки, а галочка «дубликаты» говорит системе, по какому полю искать повторы. Сохранённое правило сразу работает в симуляторе."
       />
 
-      <div className="space-y-4">
-        {rules.map((r, i) => (
-          <RuleCard key={r.id} rule={r} index={i} onToggle={onToggle} />
-        ))}
-      </div>
+      <RuleBuilder customRules={customRules} setCustomRules={setCustomRules} />
 
-      <div className="fade-up mt-7 flex flex-wrap items-center gap-4" style={{ animationDelay: '380ms' }}>
-        <button
-          onClick={() => {
-            setNote(true)
-            window.setTimeout(() => setNote(false), 3200)
-          }}
-          className="pill-btn group bg-white/70 py-2 pl-5 pr-2 text-sm font-medium text-ink ring-1 ring-ink/10 hover:bg-white"
-        >
-          Добавить правило
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink/[0.05] transition-transform duration-500 ease-swift group-hover:rotate-90">
-            <Ic name="plus" size={13} />
-          </span>
-        </button>
-        <p
-          className={`text-xs font-light text-teal-800 transition-all duration-500 ease-swift ${
-            note ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'
-          }`}
-        >
-          В демо конструктор правил отключён — в боевой версии правило собирается за пару минут.
+      <div className="mt-12">
+        <p className="fade-up mb-3 text-[10px] font-medium uppercase tracking-[0.2em] text-ink-mute">
+          Предустановленные правила · приоритет ниже ваших
+        </p>
+        <div className="space-y-3">
+          {rules.map((r, i) => (
+            <PresetCard key={r.id} rule={r} index={i} onToggle={onToggle} />
+          ))}
+        </div>
+        <p className="fade-up mt-5 text-xs font-light leading-relaxed text-ink-mute">
+          Своё правило для домена перекрывает предустановленное: сохраните разметку для
+          surgutneftegas.ru — и симулятор начнёт заполнять сделку по ней.
         </p>
       </div>
-
-      <p className="fade-up mt-8 text-xs font-light leading-relaxed text-ink-mute" style={{ animationDelay: '440ms' }}>
-        Выключите правило тумблером и прогоните письмо в симуляторе — увидите, как письмо подхватит «Общее
-        правило» или останется без сделки.
-      </p>
     </section>
   )
 }

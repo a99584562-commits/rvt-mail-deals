@@ -1,4 +1,4 @@
-import type { DedupeKey, DemoEmail, KnownDeal, Rule } from './data'
+import type { DedupeKey, DemoEmail, KnownDeal, Mapping, Rule } from './data'
 import { DEDUPE_LABELS } from './data'
 
 // Буква/цифра/дефис — часть слова; всё остальное считаем границей.
@@ -79,6 +79,78 @@ export function pickRule(email: Pick<DemoEmail, 'fromEmail'>, rules: Rule[]): Ru
   )
 }
 
+// ── Конструктор: обобщение выделенного значения в маску ────────────────────
+
+// «0138-2026» → \d+-\d+, «НГК-2284» → [А-ЯЁ]+-\d+, «18.06.2026» → \d+.\d+.\d+
+export function generalizeValue(value: string): string {
+  let out = ''
+  let i = 0
+  while (i < value.length) {
+    const c = value[i]
+    if (/[0-9]/.test(c)) {
+      while (i < value.length && /[0-9]/.test(value[i])) i++
+      out += '\\d+'
+    } else if (/[А-ЯЁ]/.test(c)) {
+      while (i < value.length && /[А-ЯЁа-яё]/.test(value[i])) i++
+      out += '[А-ЯЁа-яё]+'
+    } else if (/[а-яё]/.test(c)) {
+      while (i < value.length && /[а-яё]/.test(value[i])) i++
+      out += '[а-яё]+'
+    } else if (/[A-Za-z]/.test(c)) {
+      while (i < value.length && /[A-Za-z]/.test(value[i])) i++
+      out += '[A-Za-z]+'
+    } else if (c === ' ') {
+      while (i < value.length && value[i] === ' ') i++
+      out += '[ ]'
+    } else {
+      out += escapeRe(c)
+      i++
+    }
+  }
+  return out
+}
+
+// Человекочитаемое описание маски для подписи в интерфейсе.
+export function humanPattern(value: string): string {
+  return value
+    .replace(/[0-9]+/g, '0')
+    .replace(/[А-ЯЁа-яёA-Za-z]+/g, 'А')
+    .replace(/0/g, 'цифры')
+    .replace(/А/g, 'буквы')
+}
+
+// Якорь — короткий кусок текста слева от выделения: «в закупке №…».
+export function buildAnchor(text: string, start: number): { anchor: string; anchorRe: string } {
+  let from = Math.max(0, start - 26)
+  const nl = text.lastIndexOf('\n', start - 1)
+  if (nl >= 0 && nl + 1 > from) from = nl + 1
+  let raw = text.slice(from, start)
+  if (from > 0 && raw.length > 0 && !/\s/.test(text[from - 1])) {
+    const sp = raw.search(/\s/)
+    raw = sp >= 0 ? raw.slice(sp + 1) : ''
+  }
+  const anchor = raw.replace(/\s+/g, ' ').trim()
+  if (!anchor) return { anchor: '', anchorRe: '' }
+  const anchorRe = escapeRe(anchor).replace(/\s+/g, '\\s+')
+  return { anchor, anchorRe }
+}
+
+// Извлечение по привязке: сначала «якорь + маска», потом просто маска,
+// в крайнем случае — точное значение из примера.
+export function extractByMapping(email: Pick<DemoEmail, 'subject' | 'body'>, m: Mapping): string | null {
+  const text = m.source === 'subject' ? email.subject : email.body
+  if (m.anchorRe) {
+    const re = new RegExp(`${m.anchorRe}\\s*(${m.pattern})`, 'i')
+    const hit = re.exec(text)
+    if (hit) return hit[1]
+  }
+  const bare = new RegExp(`(?:^|[^${WORD}])(${m.pattern})`, 'i').exec(text)
+  if (bare) return bare[1]
+  return text.includes(m.example) ? m.example : null
+}
+
+// ── Предустановленные правила: фиксированные регулярки ──────────────────────
+
 export interface Extracted {
   purchaseNum: string | null
   orderNum: string | null
@@ -96,10 +168,22 @@ export function extract(email: Pick<DemoEmail, 'subject' | 'body'>): Extracted {
 }
 
 export interface DedupeCheck {
-  key: DedupeKey
+  key: string
   label: string
   value: string | null
   hit: KnownDeal | null
+}
+
+const LEGACY_BY_TARGET: Record<string, 'purchaseNum' | 'orderNum'> = {
+  '№ закупки (UF)': 'purchaseNum',
+  '№ заказа (UF)': 'orderNum',
+}
+
+function findByTarget(known: KnownDeal[], target: string, value: string): KnownDeal | null {
+  const legacy = LEGACY_BY_TARGET[target]
+  return (
+    known.find((d) => d.values?.[target] === value || (legacy && d[legacy] === value)) ?? null
+  )
 }
 
 export function checkDuplicates(
@@ -109,7 +193,7 @@ export function checkDuplicates(
   known: KnownDeal[],
 ): DedupeCheck[] {
   const normSubject = email.subject.replace(/^(re|fwd?|повторно)[:.]?\s*/i, '').trim().toLowerCase()
-  return rule.dedupe.map((key) => {
+  return rule.dedupe.map((key: DedupeKey) => {
     let value: string | null = null
     let hit: KnownDeal | null = null
     if (key === 'messageId') {
@@ -123,10 +207,12 @@ export function checkDuplicates(
         ) ?? null
     } else if (key === 'orderNum') {
       value = extracted.orderNum
-      hit = value ? known.find((d) => d.orderNum === value) ?? null : null
+      hit = value ? known.find((d) => d.orderNum === value || d.values?.['№ заказа (UF)'] === value) ?? null : null
     } else {
       value = extracted.purchaseNum
-      hit = value ? known.find((d) => d.purchaseNum === value) ?? null : null
+      hit = value
+        ? known.find((d) => d.purchaseNum === value || d.values?.['№ закупки (UF)'] === value) ?? null
+        : null
     }
     return { key, label: DEDUPE_LABELS[key], value, hit }
   })
@@ -173,11 +259,14 @@ export interface PipelineResult {
   matched: string[]
   rule: Rule | null
   extracted: Extracted
+  values: Record<string, string>
   dedupe: DedupeCheck[]
   verdict: Verdict
   duplicateOf: KnownDeal | null
   deal: DealDraft | null
 }
+
+const EMPTY_EXTRACTED: Extracted = { purchaseNum: null, orderNum: null, deadline: null }
 
 export function runPipeline(
   email: DemoEmail,
@@ -190,41 +279,93 @@ export function runPipeline(
   const hits = findKeywords(hay, keywords)
   const matched = uniqueKeywords(hits)
 
+  const base = {
+    hits,
+    matched,
+    extracted: EMPTY_EXTRACTED,
+    values: {},
+    dedupe: [] as DedupeCheck[],
+    duplicateOf: null,
+    deal: null,
+  }
+
   if (matched.length === 0) {
-    return {
-      hits,
-      matched,
-      rule: null,
-      extracted: { purchaseNum: null, orderNum: null, deadline: null },
-      dedupe: [],
-      verdict: 'skipped',
-      duplicateOf: null,
-      deal: null,
-    }
+    return { ...base, rule: null, verdict: 'skipped' }
   }
 
   const rule = pickRule(email, rules)
-  const extracted = extract(email)
-
   if (!rule) {
-    return { hits, matched, rule: null, extracted, dedupe: [], verdict: 'skipped', duplicateOf: null, deal: null }
+    return { ...base, rule: null, verdict: 'skipped' }
   }
 
+  // Правило из конструктора: значения и дубликаты по разметке пользователя.
+  if (rule.custom && rule.custom.length > 0) {
+    const values: Record<string, string> = {}
+    for (const m of rule.custom) {
+      const v = extractByMapping(email, m)
+      if (v) values[m.target] = v
+    }
+
+    const dedupe: DedupeCheck[] = [
+      {
+        key: 'messageId',
+        label: 'ID письма',
+        value: email.messageId,
+        hit: known.find((d) => d.messageId === email.messageId) ?? null,
+      },
+      ...rule.custom
+        .filter((m) => m.dedupe)
+        .map((m) => {
+          const value = values[m.target] ?? null
+          return {
+            key: m.id,
+            label: m.target,
+            value,
+            hit: value ? findByTarget(known, m.target, value) : null,
+          }
+        }),
+    ]
+
+    const dupHit = dedupe.find((d) => d.hit)
+    if (dupHit?.hit) {
+      return { ...base, rule, values, dedupe, verdict: 'duplicate', duplicateOf: dupHit.hit }
+    }
+
+    const title = values['Название сделки'] ?? email.subject
+    const fields: { label: string; value: string }[] = [
+      { label: 'Воронка', value: 'Продажи РВТ' },
+      { label: 'Стадия', value: 'Новая' },
+      ...rule.custom
+        .filter((m) => m.target !== 'Название сделки')
+        .map((m) => ({ label: m.target, value: values[m.target] ?? '—' })),
+      { label: 'Контакт / Компания', value: `${email.fromName} · ${email.fromEmail}` },
+      { label: 'Источник', value: 'Входящее письмо' },
+    ]
+    return {
+      ...base,
+      rule,
+      values,
+      dedupe,
+      verdict: 'created',
+      deal: { id: nextId, title, fields },
+    }
+  }
+
+  // Предустановленное правило: фиксированные регулярки.
+  const extracted = extract(email)
   const dedupe = checkDuplicates(email, extracted, rule, known)
   const dupHit = dedupe.find((d) => d.hit)
 
   if (dupHit?.hit) {
-    return { hits, matched, rule, extracted, dedupe, verdict: 'duplicate', duplicateOf: dupHit.hit, deal: null }
+    return { ...base, rule, extracted, dedupe, verdict: 'duplicate', duplicateOf: dupHit.hit }
   }
 
   return {
-    hits,
-    matched,
+    ...base,
     rule,
     extracted,
     dedupe,
     verdict: 'created',
-    duplicateOf: null,
     deal: buildDeal(email, rule, extracted, nextId),
   }
 }

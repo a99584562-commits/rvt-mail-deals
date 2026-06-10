@@ -55,6 +55,39 @@ export const DEDUPE_LABELS: Record<DedupeKey, string> = {
   purchaseNum: '№ закупки',
 }
 
+// Привязка «значение из письма → поле сделки», созданная в конструкторе.
+export interface Mapping {
+  id: string
+  target: string
+  source: 'subject' | 'body'
+  start: number
+  end: number
+  example: string
+  anchor: string
+  anchorRe: string
+  pattern: string
+  dedupe: boolean
+  color: number
+}
+
+export interface CustomRule {
+  id: string
+  matchType: 'domain' | 'email'
+  matchValue: string
+  mappings: Mapping[]
+  enabled: boolean
+  sample: { fromName: string; fromEmail: string; subject: string; body: string; messageId: string }
+}
+
+export const TARGET_FIELDS = [
+  '№ закупки (UF)',
+  '№ заказа (UF)',
+  'Сумма сделки',
+  'Срок подачи ТКП',
+  'Город доставки',
+  'Название сделки',
+]
+
 export interface Rule {
   id: string
   name: string
@@ -66,6 +99,27 @@ export interface Rule {
   dedupe: DedupeKey[]
   enabled: boolean
   fallback?: boolean
+  custom?: Mapping[]
+}
+
+const SRC_LABEL: Record<Mapping['source'], string> = { subject: 'из темы', body: 'из тела' }
+
+export function customRuleToRule(c: CustomRule): Rule {
+  return {
+    id: c.id,
+    name: `Своё правило · ${c.matchValue}`,
+    matchType: c.matchType,
+    matchValue: c.matchValue,
+    accent: 'teal',
+    titleTemplate: '{тема}',
+    fields: c.mappings.map((m) => ({
+      target: m.target,
+      source: m.anchor ? `после «${m.anchor}» ${SRC_LABEL[m.source]}` : SRC_LABEL[m.source],
+    })),
+    dedupe: ['messageId'],
+    enabled: c.enabled,
+    custom: c.mappings,
+  }
 }
 
 export const DEFAULT_RULES: Rule[] = [
@@ -143,6 +197,7 @@ export interface KnownDeal {
   messageId?: string
   orderNum?: string
   purchaseNum?: string
+  values?: Record<string, string>
 }
 
 export const EXISTING_DEALS: KnownDeal[] = [
@@ -152,6 +207,7 @@ export const EXISTING_DEALS: KnownDeal[] = [
     subject: 'Запрос ТКП — хвостовик 114',
     messageId: '<m21@ngk-td.ru>',
     orderNum: 'НГК-2284',
+    values: { '№ заказа (UF)': 'НГК-2284' },
   },
   {
     id: 'D-1029',
@@ -159,6 +215,7 @@ export const EXISTING_DEALS: KnownDeal[] = [
     subject: 'Извещение о закупке №31806-ЛОТ2',
     messageId: '<lot2@zakupki>',
     purchaseNum: '31806-ЛОТ2',
+    values: { '№ закупки (UF)': '31806-ЛОТ2' },
   },
 ]
 
@@ -178,7 +235,7 @@ export const SAMPLE_EMAILS: DemoEmail[] = [
     fromName: 'ПАО «Сургутнефтегаз»',
     fromEmail: 'tender@surgutneftegas.ru',
     subject: 'Закупка №0138-2026: фильтры скважинные ФС-168',
-    body: 'Добрый день!\n\nПриглашаем принять участие в закупке №0138-2026.\nПредмет: фильтры скважинные ФС-168 с гравийной набивкой, 42 комплекта, перфорированная обсадная колонна — 12 секций.\nСрок подачи ТКП — до 18.06.2026.\n\nС уважением, Петрова А.И.\nУправление МТО',
+    body: 'Добрый день!\n\nПриглашаем принять участие в закупке №0138-2026.\nПредмет: фильтры скважинные ФС-168 с гравийной набивкой, 42 комплекта, перфорированная обсадная колонна — 12 секций.\nОриентировочная сумма поставки — 18 400 000 руб.\nСрок подачи ТКП — до 18.06.2026.\nГород поставки: Сургут.\n\nС уважением, Петрова А.И.\nУправление МТО',
     messageId: '<0138-invite@surgutneftegas.ru>',
     hint: 'создаст сделку',
   },

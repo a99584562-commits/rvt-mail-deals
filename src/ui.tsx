@@ -56,6 +56,19 @@ const PATHS: Record<string, ReactNode> = {
       <path d="M8.4 18H15a3 3 0 0 0 3-3v-1.5M6 15.5V9a3 3 0 0 1 3-3h2.5" />
     </>
   ),
+  trash: (
+    <>
+      <path d="M4 7h16M10 11v6M14 11v6" />
+      <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" />
+      <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+    </>
+  ),
+  edit: (
+    <>
+      <path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z" />
+      <path d="M13.5 6.5l3 3" />
+    </>
+  ),
 }
 
 export function Ic({

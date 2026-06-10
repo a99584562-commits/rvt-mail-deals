@@ -77,6 +77,9 @@ export default function Simulator({ keywords, rules }: { keywords: string[]; rul
             setRunning(false)
             if (res.verdict === 'created' && res.deal) {
               counter.current += 1
+              const values: Record<string, string> = { ...res.values }
+              if (res.extracted.purchaseNum) values['№ закупки (UF)'] = res.extracted.purchaseNum
+              if (res.extracted.orderNum) values['№ заказа (UF)'] = res.extracted.orderNum
               setSessionDeals((prev) => [
                 ...prev,
                 {
@@ -86,6 +89,7 @@ export default function Simulator({ keywords, rules }: { keywords: string[]; rul
                   messageId: form.messageId,
                   orderNum: res.extracted.orderNum ?? undefined,
                   purchaseNum: res.extracted.purchaseNum ?? undefined,
+                  values,
                 },
               ])
             }
@@ -325,7 +329,7 @@ export default function Simulator({ keywords, rules }: { keywords: string[]; rul
                           <ul className="fade-up mt-3 space-y-2">
                             {result.dedupe.map((d) => (
                               <li key={d.key} className="flex flex-wrap items-center gap-2 text-sm">
-                                <span className="w-24 shrink-0 text-xs font-light text-ink-mute">{d.label}</span>
+                                <span className="w-32 shrink-0 text-xs font-light text-ink-mute">{d.label}</span>
                                 <span className="max-w-[200px] truncate font-mono text-xs text-ink-soft">
                                   {d.value ?? '—'}
                                 </span>

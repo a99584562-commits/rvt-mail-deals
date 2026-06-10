@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Liquid from './components/Liquid'
 import Feed from './components/Feed'
 import Simulator from './components/Simulator'
 import Keywords from './components/Keywords'
 import Rules from './components/Rules'
-import { DEFAULT_KEYWORDS, DEFAULT_RULES, type Rule } from './data'
+import { customRuleToRule, DEFAULT_KEYWORDS, DEFAULT_RULES, type CustomRule, type Rule } from './data'
 import { Ic } from './ui'
 
 type Tab = 'flow' | 'sim' | 'words' | 'rules'
@@ -18,6 +18,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 
 const LS_WORDS = 'rvt.keywords.v1'
 const LS_RULES = 'rvt.rules-enabled.v1'
+const LS_CUSTOM = 'rvt.custom-rules.v1'
 
 function loadKeywords(): string[] {
   try {
@@ -45,10 +46,39 @@ function loadRules(): Rule[] {
   return DEFAULT_RULES.map((r) => ({ ...r }))
 }
 
+function loadCustomRules(): CustomRule[] {
+  try {
+    const raw = localStorage.getItem(LS_CUSTOM)
+    if (raw) {
+      const arr = JSON.parse(raw)
+      if (Array.isArray(arr)) return arr as CustomRule[]
+    }
+  } catch {
+    /* см. выше */
+  }
+  return []
+}
+
 export default function App() {
   const [tab, setTab] = useState<Tab>('flow')
   const [keywords, setKeywordsState] = useState<string[]>(loadKeywords)
   const [rules, setRules] = useState<Rule[]>(loadRules)
+  const [customRules, setCustomRulesState] = useState<CustomRule[]>(loadCustomRules)
+
+  const setCustomRules = (next: CustomRule[]) => {
+    setCustomRulesState(next)
+    try {
+      localStorage.setItem(LS_CUSTOM, JSON.stringify(next))
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Свои правила приоритетнее предустановленных — идут первыми в списке.
+  const simRules = useMemo(
+    () => [...customRules.map(customRuleToRule), ...rules],
+    [customRules, rules],
+  )
 
   const setKeywords = (next: string[]) => {
     setKeywordsState(next)
@@ -120,9 +150,16 @@ export default function App() {
       <main className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-28 pt-32 md:px-8 md:pt-44">
         <div key={tab}>
           {tab === 'flow' && <Feed />}
-          {tab === 'sim' && <Simulator keywords={keywords} rules={rules} />}
+          {tab === 'sim' && <Simulator keywords={keywords} rules={simRules} />}
           {tab === 'words' && <Keywords keywords={keywords} setKeywords={setKeywords} />}
-          {tab === 'rules' && <Rules rules={rules} onToggle={toggleRule} />}
+          {tab === 'rules' && (
+            <Rules
+              rules={rules}
+              onToggle={toggleRule}
+              customRules={customRules}
+              setCustomRules={setCustomRules}
+            />
+          )}
         </div>
       </main>
 
