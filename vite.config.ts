@@ -7,4 +7,12 @@ export default defineConfig({
   base: './',
   server: { port: 5196, host: true },
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        offer: 'offer.html',
+      },
+    },
+  },
 })
