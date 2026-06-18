@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,500;1,400&family=Manrope:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      :root {
+        --ink: #1a2e2b;
+        --soft: #44605b;
+        --mute: #7c928e;
+        --faint: #a6b6b2;
+        --line: rgba(16, 64, 60, 0.1);
+        --line-soft: rgba(16, 64, 60, 0.06);
+        --teal: #115e59;
+        --cyan: #0e7490;
+      }
+      @page { size: A4; margin: 0; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: 'Manrope', system-ui, sans-serif;
+        color: var(--ink);
+        font-weight: 350;
+        -webkit-font-smoothing: antialiased;
+      }
+      .page {
+        position: relative;
+        width: 210mm;
+        height: 297mm;
+        padding: 17mm 16mm 15mm;
+        background: #fbfcfc;
+        overflow: hidden;
+        page-break-after: always;
+        display: flex;
+        flex-direction: column;
+      }
+      .page:last-child { page-break-after: auto; }
+
+      .display { font-family: 'Cormorant', Georgia, serif; font-weight: 300; }
+      /* В печати background-clip:text оставляет тонкие слайверы — берём сплошной тон */
+      .grad { color: #0f6e63; }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 7.5pt;
+        font-weight: 500;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: rgba(17, 94, 89, 0.8);
+        border: 1px solid rgba(17, 94, 89, 0.2);
+        background: rgba(17, 94, 89, 0.05);
+        border-radius: 999px;
+        padding: 5px 12px;
+        align-self: flex-start;
+      }
+      .secnum { font-family: 'Manrope'; font-size: 8.5pt; color: var(--faint); letter-spacing: 0.06em; }
+      h2.sec {
+        font-family: 'Cormorant', serif;
+        font-weight: 300;
+        font-size: 27pt;
+        line-height: 1.06;
+        letter-spacing: -0.01em;
+        margin: 10px 0 0;
+        color: var(--ink);
+      }
+      .sec-desc { font-size: 10pt; font-weight: 300; line-height: 1.55; color: var(--soft); margin-top: 9px; max-width: 150mm; }
+
+      .brandmark { display: flex; align-items: center; gap: 11px; }
+      .brand-drop {
+        width: 34px; height: 34px; border-radius: 50%;
+        background: linear-gradient(180deg, rgba(14,116,144,0.16), rgba(17,94,89,0.06));
+        border: 1px solid rgba(17, 94, 89, 0.22);
+        display: flex; align-items: center; justify-content: center;
+      }
+      .brand-name { font-family: 'Cormorant', serif; font-style: italic; font-weight: 500; font-size: 16pt; line-height: 1; color: var(--ink); }
+      .brand-sub { font-size: 7pt; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase; color: var(--mute); margin-top: 4px; }
+
+      .card {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: 0 12px 26px -20px rgba(16, 64, 60, 0.45);
+        padding: 16px 18px;
+      }
+      .card-title { font-size: 11.5pt; font-weight: 500; color: var(--ink); }
+      .card-text { font-size: 9.5pt; font-weight: 300; line-height: 1.5; color: var(--mute); margin-top: 6px; }
+
+      .ic {
+        width: 34px; height: 34px; border-radius: 50%;
+        background: rgba(17, 94, 89, 0.07);
+        border: 1px solid rgba(17, 94, 89, 0.14);
+        display: flex; align-items: center; justify-content: center;
+        color: var(--teal);
+      }
+      .ic.neutral { background: rgba(16, 64, 60, 0.04); border-color: var(--line); color: var(--soft); }
+
+      .row { display: flex; gap: 12px; }
+      .col { flex: 1; }
+
+      .feat { list-style: none; margin: 0; padding: 0; }
+      .feat li { display: flex; align-items: flex-start; gap: 9px; font-size: 9.3pt; font-weight: 300; line-height: 1.4; color: var(--soft); padding: 4.5px 0; }
+      .dot {
+        flex: none; width: 15px; height: 15px; margin-top: 1px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 8pt; line-height: 1;
+        background: rgba(17, 94, 89, 0.1); color: #0f5a52; border: 1px solid rgba(17, 94, 89, 0.18);
+      }
+      .dot.off { background: rgba(16, 64, 60, 0.04); color: var(--faint); border-color: var(--line); }
+      .feat li.off { color: var(--faint); }
+
+      .price { font-family: 'Cormorant', serif; font-weight: 300; font-size: 30pt; line-height: 1; color: var(--ink); }
+      .price.grad { color: #0e7490; }
+      .price-note { font-size: 8.5pt; font-weight: 300; color: var(--mute); }
+      .meta { font-size: 8.5pt; font-weight: 300; color: var(--mute); margin-top: 6px; }
+
+      .badge {
+        font-size: 7.5pt; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;
+        color: #0c4a44; background: rgba(17, 94, 89, 0.1); border: 1px solid rgba(17, 94, 89, 0.25);
+        border-radius: 999px; padding: 4px 10px;
+      }
+      .pkg-rec { border-color: rgba(17, 94, 89, 0.3); box-shadow: 0 18px 34px -22px rgba(13, 110, 99, 0.5); }
+      .note {
+        margin-top: 13px; border-radius: 12px;
+        background: linear-gradient(180deg, rgba(17, 94, 89, 0.07), rgba(14, 116, 144, 0.03));
+        border: 1px solid rgba(17, 94, 89, 0.18);
+        padding: 11px 13px; font-size: 8.8pt; font-weight: 300; line-height: 1.5; color: var(--soft);
+      }
+      .label { font-size: 7.5pt; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--mute); }
+
+      .foot {
+        position: absolute; left: 16mm; right: 16mm; bottom: 9mm;
+        display: flex; justify-content: space-between; align-items: center;
+        font-size: 7.5pt; font-weight: 300; color: var(--faint);
+        border-top: 1px solid var(--line-soft); padding-top: 7px;
+      }
+      .spacer { flex: 1; }
+      .stepnum { font-family: 'Cormorant', serif; font-weight: 300; font-size: 22pt; color: rgba(17, 94, 89, 0.4); line-height: 1; }
+    </style>
+  </head>
+  <body>
+    <!-- ───────────── COVER ───────────── -->
+    <section
+      class="page"
+      style="background: radial-gradient(120% 80% at 15% 10%, rgba(189, 231, 224, 0.5) 0%, transparent 45%),
+        radial-gradient(120% 90% at 90% 100%, rgba(196, 226, 242, 0.45) 0%, transparent 45%), #fbfcfc;"
+    >
+      <div class="brandmark">
+        <div class="brand-drop">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#115e59" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3c4.5 5.6 7.5 9.5 7.5 13a7.5 7.5 0 1 1-15 0C4.5 12.5 7.5 8.6 12 3z" />
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">Почта&nbsp;→&nbsp;Сделки</div>
+          <div class="brand-sub">ЛАЙМ · интеграция Битрикс24</div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="eyebrow">Коммерческое предложение · РВТ</div>
+      <h1 class="display" style="font-size: 46pt; line-height: 1.0; letter-spacing: -0.015em; margin: 18px 0 0; max-width: 175mm;">
+        Сделки в Битрикс24 <span class="grad" style="font-style: italic; font-weight: 400;">рождаются из писем</span> сами
+      </h1>
+      <p style="font-size: 12pt; font-weight: 300; line-height: 1.55; color: var(--soft); margin-top: 18px; max-width: 162mm;">
+        Входящие письма с заявками превращаются в сделки воронки «Продажи&nbsp;РВТ» без ручного ввода. Два
+        варианта внедрения: прозрачный парсер по правилам и интеллектуальный ИИ-гейт, который отличает
+        реальный запрос от спама с теми же словами.
+      </p>
+
+      <div class="spacer"></div>
+
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid var(--line); padding-top: 12px;">
+        <div style="font-size: 9pt; font-weight: 300; color: var(--mute);">
+          Автоматизация воронки «Продажи РВТ»<br />Битрикс24 · 2026
+        </div>
+        <div style="text-align: right; font-size: 9pt; font-weight: 400; color: var(--soft);">
+          limecrm.ru<br /><span style="color: var(--mute); font-weight: 300;">Ижевск</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────────── PROBLEM ───────────── -->
+    <section class="page">
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <span class="secnum">01</span><span class="eyebrow">зачем это нужно</span>
+      </div>
+      <h2 class="sec">Заявки тонут в почте</h2>
+      <p class="sec-desc">
+        Отдел получает запросы на скважинные фильтры и трубную продукцию вперемешку с рассылками и счетами.
+        Завести нужное вручную — долго; отфильтровать простыми правилами — ненадёжно.
+      </p>
+
+      <div style="margin-top: 22px; display: flex; flex-direction: column; gap: 13px;">
+        <div class="card">
+          <div style="display: flex; gap: 14px; align-items: flex-start;">
+            <div class="ic neutral">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" /></svg>
+            </div>
+            <div>
+              <div class="card-title">Ручной ввод</div>
+              <div class="card-text">Менеджер вычитывает почту и заводит сделки руками — медленно, с потерями и человеческим фактором.</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display: flex; gap: 14px; align-items: flex-start;">
+            <div class="ic neutral">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>
+            </div>
+            <div>
+              <div class="card-title">Спам с ключевыми словами</div>
+              <div class="card-text">«Фильтры» и «трубы» встречаются и в рекламе. Триггер по словам создаёт мусорные сделки, которые потом нужно чистить.</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display: flex; gap: 14px; align-items: flex-start;">
+            <div class="ic neutral">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" /><circle cx="7.5" cy="7.5" r="1" /></svg>
+            </div>
+            <div>
+              <div class="card-title">Письма без шаблона</div>
+              <div class="card-text">Заявки приходят в свободной форме от разных поставщиков — под единую маску их не собрать.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="note" style="margin-top: 0;">
+        <b style="font-weight: 500; color: var(--ink);">Решение.</b> Приложение внутри вашего Битрикс24 разбирает
+        входящие письма и само создаёт сделки только по реальным запросам — на стадии «Новая» воронки «Продажи РВТ».
+      </div>
+
+      <div class="foot"><span>ЛАЙМ · Почта → Сделки</span><span>02</span></div>
+    </section>
+
+    <!-- ───────────── HOW IT WORKS ───────────── -->
+    <section class="page">
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <span class="secnum">02</span><span class="eyebrow">как это работает</span>
+      </div>
+      <h2 class="sec">Один конвейер — <span class="grad" style="font-style: italic; font-weight: 400;">от письма до сделки</span></h2>
+      <p class="sec-desc">
+        Каждое письмо проходит цепочку проверок. В пакете «ИИ» ключевые слова становятся лишь дешёвым
+        пред-фильтром, а решение принимает модель — с объяснением, почему письмо приняли или отклонили.
+      </p>
+
+      <div class="row" style="margin-top: 24px;">
+        <div class="col card">
+          <span class="stepnum">01</span>
+          <div class="card-title" style="margin-top: 10px;">Входящее письмо</div>
+          <div class="card-text">почта подключена к CRM или по IMAP</div>
+        </div>
+        <div class="col card">
+          <span class="stepnum">02</span>
+          <div class="card-title" style="margin-top: 10px;">Пред-фильтр</div>
+          <div class="card-text">ключевые слова отсекают явный мусор</div>
+        </div>
+      </div>
+      <div class="row" style="margin-top: 12px;">
+        <div class="col card pkg-rec">
+          <span class="stepnum">03</span>
+          <div class="card-title" style="margin-top: 10px;">ИИ-гейт</div>
+          <div class="card-text">решение «наш / не наш» с причиной</div>
+        </div>
+        <div class="col card">
+          <span class="stepnum">04</span>
+          <div class="card-title" style="margin-top: 10px;">Сделка</div>
+          <div class="card-text">воронка «Продажи РВТ», стадия «Новая»</div>
+        </div>
+      </div>
+
+      <div class="note">
+        <b style="font-weight: 500; color: var(--ink);">Главное про ИИ-гейт.</b> Мусорную сделку легко удалить,
+        а потерянную заявку — нет. Поэтому при сомнении модель не выбрасывает письмо молча, а ставит сделку на
+        стадию «На проверку» — менеджер видит и решает.
+      </div>
+
+      <div class="spacer"></div>
+      <div class="foot"><span>ЛАЙМ · Почта → Сделки</span><span>03</span></div>
+    </section>
+
+    <!-- ───────────── PACKAGES ───────────── -->
+    <section class="page">
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <span class="secnum">03</span><span class="eyebrow">два пакета внедрения</span>
+      </div>
+      <h2 class="sec">Правила или <span class="grad" style="font-style: italic; font-weight: 400;">интеллект</span></h2>
+      <p class="sec-desc">
+        Оба пакета — полноценное приложение внутри вашего Битрикс24. Разница в том, кто решает о создании
+        сделки: жёсткие правила или ИИ-модель. Можно начать с «Парсера» и подключить ИИ вторым шагом.
+      </p>
+
+      <div class="row" style="margin-top: 18px; align-items: stretch;">
+        <!-- Basic -->
+        <div class="col card" style="display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; gap: 11px;">
+            <div class="ic neutral">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3.4M12.6 7H20M4 17h8.4M17.6 17H20" /><circle cx="10" cy="7" r="2.4" /><circle cx="15" cy="17" r="2.4" /></svg>
+            </div>
+            <div>
+              <div class="label">Пакет 1</div>
+              <div class="display" style="font-size: 19pt; font-weight: 500; color: var(--ink);">Парсер</div>
+            </div>
+          </div>
+          <p class="card-text" style="margin-top: 11px;">
+            Детерминированный разбор по правилам, которые вы настраиваете мышкой. Прозрачно и предсказуемо —
+            для потоков со стабильным форматом.
+          </p>
+          <div style="margin-top: 13px; display: flex; align-items: baseline; gap: 8px;">
+            <span class="price">50 000 ₽</span>
+          </div>
+          <div class="meta">разовая разработка и внедрение · 2–3 недели</div>
+          <ul class="feat" style="margin-top: 13px; border-top: 1px solid var(--line-soft); padding-top: 11px;">
+            <li><span class="dot">✓</span>Приложение внутри Битрикс24 клиента</li>
+            <li><span class="dot">✓</span>Подключение почты: событие CRM или IMAP</li>
+            <li><span class="dot">✓</span>Словарь ключевых слов — триггеры запуска</li>
+            <li><span class="dot">✓</span>Конструктор правил: «значение → поле сделки»</li>
+            <li><span class="dot">✓</span>Извлечение полей по шаблону (№, сумма, срок)</li>
+            <li><span class="dot">✓</span>Защита от дубликатов + журнал обработки</li>
+            <li class="off"><span class="dot off">–</span>ИИ-отсев спама с ключевыми словами</li>
+            <li class="off"><span class="dot off">–</span>Распознавание писем без шаблона</li>
+            <li class="off"><span class="dot off">–</span>Стадия «На проверку» для спорных</li>
+          </ul>
+        </div>
+
+        <!-- AI -->
+        <div class="col card pkg-rec" style="display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 11px;">
+              <div class="ic">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.4L19 10l-5.2 1.6L12 17l-1.8-5.4L5 10l5.2-1.6z" /></svg>
+              </div>
+              <div>
+                <div class="label" style="color: rgba(17,94,89,0.8);">Пакет 2</div>
+                <div class="display" style="font-size: 19pt; font-weight: 500; color: var(--ink);">ИИ-гейт</div>
+              </div>
+            </div>
+            <span class="badge">рекомендуем</span>
+          </div>
+          <p class="card-text" style="margin-top: 11px;">
+            Модель читает письмо как менеджер: понимает запрос даже в свободной форме и отсекает спам с теми же
+            словами. С объяснением каждого решения.
+          </p>
+          <div style="margin-top: 13px; display: flex; align-items: baseline; gap: 8px;">
+            <span class="price grad">90 000 ₽</span>
+          </div>
+          <div class="meta">разработка + пилот-замер на ваших письмах · 3–4 недели</div>
+          <ul class="feat" style="margin-top: 13px; border-top: 1px solid var(--line-soft); padding-top: 11px;">
+            <li><span class="dot">✓</span>Всё из пакета «Парсер»</li>
+            <li><span class="dot">✓</span>ИИ-гейт: «наш / не наш» с объяснением</li>
+            <li><span class="dot">✓</span>ИИ-извлечение полей из свободного текста</li>
+            <li><span class="dot">✓</span>Fail-safe: спорное — на стадию «На проверку»</li>
+            <li><span class="dot">✓</span>Обучение примерами: правка → рост точности</li>
+            <li><span class="dot">✓</span>BitrixGPT (бесплатно) или внешняя модель</li>
+            <li><span class="dot">✓</span>Пилот-замер точности на ваших письмах</li>
+          </ul>
+          <div class="meta" style="margin-top: 11px; padding-top: 9px; border-top: 1px solid var(--line-soft);">
+            BitrixGPT — без абонплаты · внешняя модель — от 6 000 ₽/мес
+          </div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="foot"><span>ЛАЙМ · Почта → Сделки</span><span>04</span></div>
+    </section>
+
+    <!-- ───────────── PROCESS + TECH ───────────── -->
+    <section class="page">
+      <div style="display: flex; align-items: center; gap: 11px;">
+        <span class="secnum">04</span><span class="eyebrow">как внедряем</span>
+      </div>
+      <h2 class="sec">Четыре шага до запуска</h2>
+      <p class="sec-desc">Прозрачный процесс без сюрпризов: сначала измеряем на ваших письмах, потом включаем.</p>
+
+      <div class="row" style="margin-top: 20px;">
+        <div class="col card"><span class="stepnum">01</span><div class="card-title" style="margin-top: 9px;">Аудит и пилот</div><div class="card-text">Собираем 50–100 ваших писем, размечаем «нужное / мимо», замеряем точность ИИ.</div></div>
+        <div class="col card"><span class="stepnum">02</span><div class="card-title" style="margin-top: 9px;">Настройка</div><div class="card-text">Разворачиваем приложение, подключаем почту, переносим словарь и правила, настраиваем поля.</div></div>
+      </div>
+      <div class="row" style="margin-top: 12px;">
+        <div class="col card"><span class="stepnum">03</span><div class="card-title" style="margin-top: 9px;">Тест на боевых письмах</div><div class="card-text">Гоняем поток в тихом режиме, сверяем результат, докручиваем правила и примеры.</div></div>
+        <div class="col card"><span class="stepnum">04</span><div class="card-title" style="margin-top: 9px;">Запуск и обучение</div><div class="card-text">Включаем автосоздание сделок, обучаем менеджеров работать со стадией «На проверку».</div></div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 11px; margin-top: 26px;">
+        <span class="secnum">05</span><span class="eyebrow">что под капотом</span>
+      </div>
+      <div class="row" style="margin-top: 14px;">
+        <div class="col card">
+          <div class="card-title">В вашем контуре</div>
+          <div class="card-text">Платформа VibeCode + REST-прокси портала. Данные остаются в вашем Битрикс24.</div>
+        </div>
+        <div class="col card">
+          <div class="card-title">Без риска</div>
+          <div class="card-text">На тесте сделки создаются параллельно и помечаются — боевые процессы не трогаем.</div>
+        </div>
+        <div class="col card">
+          <div class="card-title">Гибрид</div>
+          <div class="card-text">Строгие форматы (ЭТП, госзакупки) — правилами, живые письма — моделью.</div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+      <div class="foot"><span>ЛАЙМ · Почта → Сделки</span><span>05</span></div>
+    </section>
+
+    <!-- ───────────── CLOSING / CONTACTS ───────────── -->
+    <section
+      class="page"
+      style="background: radial-gradient(120% 80% at 85% 8%, rgba(196, 226, 242, 0.5) 0%, transparent 46%),
+        radial-gradient(120% 90% at 10% 100%, rgba(189, 231, 224, 0.5) 0%, transparent 46%), #fbfcfc;"
+    >
+      <div class="brandmark">
+        <div class="brand-drop">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#115e59" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3c4.5 5.6 7.5 9.5 7.5 13a7.5 7.5 0 1 1-15 0C4.5 12.5 7.5 8.6 12 3z" />
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">Почта&nbsp;→&nbsp;Сделки</div>
+          <div class="brand-sub">ЛАЙМ · интеграция Битрикс24</div>
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="eyebrow">дальше</div>
+      <h2 class="display" style="font-size: 34pt; line-height: 1.08; margin: 16px 0 0; max-width: 160mm;">
+        Начнём с пилота <span class="grad" style="font-style: italic; font-weight: 400;">на ваших письмах</span>
+      </h2>
+      <p style="font-size: 11pt; font-weight: 300; line-height: 1.55; color: var(--soft); margin-top: 14px; max-width: 150mm;">
+        Пришлите 50–100 реальных писем — покажем на цифрах, сколько заявок система ловит и сколько спама
+        отсекает. Это и станет точкой старта.
+      </p>
+
+      <div class="card" style="margin-top: 26px; max-width: 130mm;">
+        <div class="label">Контакты</div>
+        <div class="display" style="font-size: 17pt; font-weight: 500; margin-top: 8px;">ЛАЙМ · Артём Скобелев</div>
+        <div class="card-text" style="margin-top: 2px;">директор</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 14px; font-size: 10pt; color: var(--soft);">
+          <span>✉&nbsp;&nbsp;a.skobelev@limecrm.ru</span>
+          <span>◎&nbsp;&nbsp;limecrm.ru</span>
+          <span>⌖&nbsp;&nbsp;Ижевск</span>
+        </div>
+        <div style="margin-top: 14px; border-top: 1px solid var(--line-soft); padding-top: 10px; font-size: 8.5pt; font-weight: 300; color: var(--mute);">
+          Предложение действительно до 31 июля 2026. Стоимость указана ориентировочно и уточняется после аудита.
+        </div>
+      </div>
+
+      <div class="spacer"></div>
+      <div style="border-top: 1px solid var(--line); padding-top: 12px; font-size: 8.5pt; font-weight: 300; color: var(--faint);">
+        ЛАЙМ · limecrm.ru · коммерческое предложение для РВТ · интеграция с Битрикс24
+      </div>
+    </section>
+  </body>
+</html>

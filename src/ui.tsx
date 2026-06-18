@@ -100,6 +100,12 @@ const PATHS: Record<string, ReactNode> = {
       <path d="M3 13l9 5 9-5" />
     </>
   ),
+  download: (
+    <>
+      <path d="M12 4v10M8 11l4 4 4-4" />
+      <path d="M5 19h14" />
+    </>
+  ),
 }
 
 export function Ic({

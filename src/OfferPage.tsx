@@ -9,6 +9,7 @@ import { Eyebrow, Ic, Shell } from './ui'
 const CONFIG = {
   client: 'РВТ',
   demoUrl: './',
+  pdfUrl: './kp-pochta-sdelki-rvt.pdf',
   basic: {
     setup: '50 000 ₽',
     term: '2–3 недели',
@@ -212,6 +213,13 @@ export default function Offer() {
               </a>
               <a href="#packages" className="pill-btn px-5 py-2.5 text-sm text-ink-soft ring-1 ring-ink/[0.1] hover:ring-ink/25">
                 Смотреть пакеты
+              </a>
+              <a
+                href={CONFIG.pdfUrl}
+                download
+                className="pill-btn px-5 py-2.5 text-sm text-ink-soft ring-1 ring-ink/[0.1] hover:ring-ink/25"
+              >
+                <Ic name="download" size={15} /> Скачать PDF
               </a>
             </div>
           </Reveal>
