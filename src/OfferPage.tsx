@@ -10,12 +10,12 @@ const CONFIG = {
   client: 'РВТ',
   demoUrl: './',
   basic: {
-    setup: '90 000 ₽',
+    setup: '50 000 ₽',
     term: '2–3 недели',
     note: 'разовая разработка и внедрение',
   },
   ai: {
-    setup: '170 000 ₽',
+    setup: '90 000 ₽',
     term: '3–4 недели',
     note: 'разработка + пилот-замер на ваших письмах',
     monthly: 'BitrixGPT — без абонплаты · внешняя модель — от 6 000 ₽/мес',
@@ -27,8 +27,7 @@ const CONFIG = {
     person: 'Артём Скобелев',
     role: 'директор',
     site: 'limecrm.ru',
-    phone: '+7 (___) ___-__-__',
-    email: 'hello@limecrm.ru',
+    email: 'a.skobelev@limecrm.ru',
     city: 'Ижевск',
   },
 }
@@ -469,9 +468,6 @@ export default function Offer() {
                       </p>
                       <p className="text-sm font-light text-ink-mute">{CONFIG.contact.role}</p>
                       <ul className="mt-5 space-y-3 text-sm">
-                        <li className="flex items-center gap-3 text-ink-soft">
-                          <Ic name="phone" size={15} className="text-teal-800" /> {CONFIG.contact.phone}
-                        </li>
                         <li className="flex items-center gap-3 text-ink-soft">
                           <Ic name="mail" size={15} className="text-teal-800" /> {CONFIG.contact.email}
                         </li>
